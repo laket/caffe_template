@@ -155,6 +155,7 @@ layer {
   type: "Softmax"
   bottom: "ip2"
   top: "prob"
+
   include {
     phase: TEST
   }
