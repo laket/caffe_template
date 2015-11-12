@@ -54,6 +54,7 @@ def read_lmdb(path_lmdb, num_data):
         
             img = img.reshape((datum.channels, datum.height, datum.width))
             img = np.transpose(img, axes=(1,2,0))
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
             
             #cv2.imwrite("%d.png" % i, img)
             imgs.append(img)
