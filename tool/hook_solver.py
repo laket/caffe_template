@@ -45,7 +45,7 @@ def hook_train(solver):
     return
     
 
-def train(path_solver, num_iter=100, hook_iter=10):
+def train(path_solver, num_iter=100, hook_iter=None):
     """
     Arguments:
       path_solver : path to prototxt of solver
@@ -60,14 +60,15 @@ def train(path_solver, num_iter=100, hook_iter=10):
     for name, blob in solver.net.blobs.items():
         logger.debug("%s[%s]" % (name, str(blob.data.shape)))
 
-    for i in range(num_iter):
-        #take 1 step (if iter reaches to test timing or snapshot timing then test or save is done)
-        solver.step(i)
-
-        if i % hook_iter == 0:
+    if hook_iter is None:
+        solver.step(num_iter)
+    else:
+        num_loop = num_iter / hook_iter
+        for i in range(num_loop):
+            solver.step(hook_iter)
             hook_train(solver)
         
-    return solver.net
+    return solver
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -81,4 +82,9 @@ if __name__ == "__main__":
         logger.error("%s not found" % path_solver)
         sys.exit(-1)
 
-    net = train(path_solver, 100)
+    solver = train(path_solver, 1000)
+    test_net = solver.test_nets[0]
+    acc = test_net.forward()
+
+    print acc
+    
