@@ -13,7 +13,7 @@ variable {
  name: "CONV_SIZE"
  type: INT
  size: 3
- min:  3
+ min:  2
  max:  5
 }
 

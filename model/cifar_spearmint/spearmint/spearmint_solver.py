@@ -65,12 +65,14 @@ def override_net_def(params):
     dict_layer["conv2"].convolution_param.num_output = co[1]
     dict_layer["conv3"].convolution_param.num_output = co[2]
 
-    """
+
+    # in previous version kernel_size is not repeated.
+    # so how to set value is changed
     cs = params["CONV_SIZE"]
-    dict_layer["conv1"].convolution_param.kernel_size = cs[0]
-    dict_layer["conv2"].convolution_param.kernel_size = cs[1]
-    dict_layer["conv3"].convolution_param.kernel_size = cs[2]
-    """
+    dict_layer["conv1"].convolution_param.kernel_size.append(cs[0])
+    dict_layer["conv2"].convolution_param.kernel_size.append(cs[1])
+    dict_layer["conv3"].convolution_param.kernel_size.append(cs[2])
+
 
     print str(net_def)
     with open(path_temporary_model, "w") as f:
@@ -95,21 +97,23 @@ def train(params, path_solver, num_iter=100, hook_iter=10):
 
 # Write a function like this called 'main'
 def main(job_id, params):
-    path_solver = "/data/project/cifar10/model/spearmint_model/solver.prototxt"
+    path_solver = "/data/cifar10/model/cifar_spearmint/solver.prototxt"
 
     if not os.path.exists(path_solver):
         logger.error("%s not found" % path_solver)
         sys.exit(-1)
 
     # 80 -> 3200, 
-    test_net = train(params, path_solver, num_iter=40000, hook_iter=None)
+    test_net = train(params, path_solver, num_iter=50000, hook_iter=None)
 
+    scores = []
     # run 1 batch
     # TODO we need multiple forward to save memory
-    for i in range(100):
+    for i in range(300):
         test_net.forward()
+        scores.append(test_net.blobs["accuracy"].data)
 
-    acc = test_net.blobs["accuracy"].data
+    acc = numpy.average(scores)
     #logger.info("acc = %s" % str(acc))
 
     return 1 - acc

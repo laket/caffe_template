@@ -7,7 +7,7 @@ net: "./temporary_net.prototxt"
 test_iter: 1000
 
 # Carry out testing every 1000 training iterations.
-test_interval: 1000
+test_interval: 3000
 # The base learning rate, momentum and the weight decay of the network.
 base_lr: 0.001
 momentum: 0.9
