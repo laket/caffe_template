@@ -50,32 +50,10 @@ formatter = logging.Formatter("[%(levelname)s]%(funcName)s(%(lineno)d) %(message
 handler = logging.StreamHandler()
 handler.setFormatter(formatter)
 handler.setLevel(logging.DEBUG)
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.addHandler(handler)
 logger.setLevel(logging.DEBUG)
 
-def get_random_keys(path_lmdb, num_key, num_access=1000000):
-    logger.info("start create lmdb random sequence")
-    lmdb_env = lmdb.open(path_lmdb, readonly=True, lock=False)
-
-    keys = []
-
-    with lmdb_env.begin() as txn:
-        cur = txn.cursor()
-        cur.first()
-        
-        for i in range(num_key):
-            k,v = cur.item()
-
-            keys.append(k)
-
-            if not cur.next():
-                break
-
-    keys = np.array(keys)
-    indices = np.random.permutation(len(keys))[:num_key]
-
-    return list(keys[indices])
     
 
 def classify_lmdb_images(net, path_lmdb, preprocessor, num_access_data=1000):
@@ -91,7 +69,7 @@ def classify_lmdb_images(net, path_lmdb, preprocessor, num_access_data=1000):
       detect_labels : labels detected by caffe net
     """
 
-    keys = get_random_keys(path_lmdb, num_access_data)
+    keys = lmdb_utils.get_random_keys(path_lmdb, num_access_data)
     
     logger.info("reading %d image files from %s" % (num_access_data, path_lmdb))    
     lmdb_env = lmdb.open(path_lmdb, readonly=True, lock=False)
@@ -134,7 +112,7 @@ def divide_images(labels, detect_labels, images):
         if label == detect_label:
             corrects[label].append((detect_label, image))
         else:
-            wrongs[detect_label].append((label, image))
+            wrongs[label].append((detect_label, image))
 
     return corrects, wrongs
     
@@ -207,7 +185,7 @@ if __name__ == "__main__":
         if keycode == ord("q"):
             break
         if keycode == ord("j"):
-            idx_image = max(idx_image-1,0)
+            idx_image = max(idx_image-num_image,0)
         if keycode == ord("l"):
             idx_image = idx_image + num_image
         if keycode == ord("i"):

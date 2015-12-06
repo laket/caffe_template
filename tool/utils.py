@@ -145,3 +145,31 @@ def make_tiled_image(cv_imgs, width=3, num_tile=9):
     data = data.reshape((height * data.shape[1], width * data.shape[3]) + data.shape[4:])
     
     return data        
+
+class LabelConverter(object):
+    """
+    convert label index to text
+    """
+    def __init__(self, path_vis_labels):
+        """
+        Args:
+          path_vis_labels: path to text files enumerating categories.
+        ==================
+        aquatic mammals
+        fish
+        flowers
+        """
+        if not os.path.exists(path_vis_labels):
+            logger.error("can't find %s" % path_vis_labels)
+            raise ValueError(path_vis_labels)
+
+        labels = []
+        with open(path_vis_labels, "r") as f:
+            for l in f:
+                labels.append(l.strip())
+                
+        logger.info("load %d labels " % len(labels))
+        self.labels = labels
+
+    def to_label(self, index):
+        return self.labels[index]
