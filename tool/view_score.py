@@ -36,17 +36,24 @@ if __name__ == "__main__":
     #train_dict_names = ('NumIters', 'Seconds', 'TrainingLoss', 'LearningRate')
     # Seconds : time from run training script (test+train). (time is consumed mostly in train)
     #test_dict_names = ('NumIters', 'Seconds', 'TestAccuracy', 'TestLoss')
-    train_dict_list, train_dict_names, test_dict_list, test_dict_names = \
-        parse_log(path_log)
+
+    # for old caffe
+    #train_dict_list, train_dict_names, test_dict_list, test_dict_names = \
+    #    parse_log(path_log)
+    train_dict_list, test_dict_list = parse_log(path_log)
 
     #TODO we should remove dependecy to pandas
     df_train = pd.DataFrame(train_dict_list)
     df_test = pd.DataFrame(test_dict_list)
-
+    
     fig, ax1 = plt.subplots()
     ax2 = ax1.twinx()
-    lns1 = ax1.plot(df_train["NumIters"], df_train["TrainingLoss"], "g-", label="loss")
-    lns2 = ax2.plot(df_test["NumIters"], 1 - df_test["TestAccuracy"], "r-", label="miss rate")
+
+    # for old caffe
+    #lns1 = ax1.plot(df_train["NumIters"], df_train["TrainingLoss"], "g-", label="loss")
+    #lns2 = ax2.plot(df_test["NumIters"], 1 - df_test["TestAccuracy"], "r-", label="miss rate")
+    lns1 = ax1.plot(df_train["NumIters"], df_train["loss"], "g-", label="loss")
+    lns2 = ax2.plot(df_test["NumIters"], 1 - df_test["accuracy"], "r-", label="miss rate")
 
     lns = lns1 + lns2
     labels = [l.get_label() for l in lns]

@@ -20,6 +20,8 @@ import caffe.proto.caffe_pb2 as pb
 import cv2
 import lmdb
 
+import utils
+
 formatter = logging.Formatter("[%(levelname)s] %(funcName)s(%(lineno)d) : %(message)s")
 handler = logging.StreamHandler()
 handler.setFormatter(formatter)
@@ -39,6 +41,7 @@ def read_lmdb(path_lmdb, num_data):
     
     env = lmdb.open(path_lmdb, readonly=True, lock=False)
     imgs = []
+    converter = utils.Converter()
     
     with env.begin() as txn:
         cur = txn.cursor()
@@ -53,8 +56,7 @@ def read_lmdb(path_lmdb, num_data):
             img = np.array(bytearray(datum.data))
         
             img = img.reshape((datum.channels, datum.height, datum.width))
-            img = np.transpose(img, axes=(1,2,0))
-            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            img = converter.to_cv(img)
             
             #cv2.imwrite("%d.png" % i, img)
             imgs.append(img)
@@ -75,9 +77,10 @@ if __name__ == "__main__":
     
     path_lmdb, num_data, path_out = args.path_lmdb, args.num_data, args.path_out
 
+
     if not os.path.exists(path_out):
-        logger.error("%s not found" % path_out)
-        sys.exit(-1)
+        logger.warning("Create directory %s" % path_out)
+        os.makedirs(path_out)
     
     imgs = read_lmdb(path_lmdb, num_data)
 

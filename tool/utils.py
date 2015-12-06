@@ -35,12 +35,15 @@ class Preprocessor(object):
     """
     preprocess image for caffe processing
     """
-    def __init__(self, scale=1.0, path_mean_file=None):
+    def __init__(self, scale=1.0, path_mean_file=None, mean_pixels=None):
         """
-        Arguments:
+        Args:
           scale : preprocess scale parameter
           path_mean_file : binaryproto file contains mean image
+          mean_pixels : 1d array ([B,G,R])
         """
+        assert path_mean_file is None or mean_pixels is None, "can't use mean file and mean pixels simultaneously."
+        
         # caffe mean image
         self.mean_image = None
         if path_mean_file is not None:
@@ -48,6 +51,9 @@ class Preprocessor(object):
                 raise ValueError("%s is not found" % path_mean_file)
 
             self.mean_image = load_binaryproto(path_mean_file)
+        self.mean_pixels = None
+        if mean_pixels is not None:
+            self.mean_pixels = np.array(mean_pixels)
 
         self.scale = scale
 
@@ -60,13 +66,27 @@ class Preprocessor(object):
         Return:
           preprocessed caffe image (c,h,w)
         """
-
-        if self.mean_image is None:
-            res = src_caffe_image * self.scale
-        else:
-            res = (src_caffe_image - self.mean_image) * self.scale
-        
+        if self.mean_image is not None:
+            src_caffe_image = src_caffe_image - self.mean_image
+        if self.mean_pixels is not None:
+            # c,h,w -> h,w,c
+            tmp = src_caffe_image.transpose((1,2,0))
+            tmp -= self.mean_pixels
+            # h,w,c -> c,h,w
+            src_caffe_image = tmp.transpose((2,0,1))
+            
+        res = src_caffe_image * self.scale
         return res
+
+    @classmethod
+    def make_from_setting(cls, tool_setting):
+        """
+        make Converter from tool_setting class.
+        Args:
+          tool_setting : tool_setting.py module object
+        """
+        s = tool_setting
+        return Preprocessor(scale=s.scale, path_mean_file=s.path_mean, mean_pixels=s.mean_pixels)
     
 class Converter(object):
     """
@@ -77,19 +97,17 @@ class Converter(object):
 
     def to_caffe(self, cv_image):
         """
-        from caffe image (c,h,w RGB) to cv image (h,w,c BGR)
+        from cv image (h,w,c BGR) to caffe image (c,h,w BGR)
         TODO : process gray scale
         """
-        m = cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR) 
-        return m.transpose((2,0,1))   #  (h,w,c) -> (c,h,w)
+        return cv_image.transpose((2,0,1))   #  (h,w,c) -> (c,h,w)
 
     def to_cv(self, caffe_image):
         """
-        from cv image (h,w,c BGR) to caffe image (c,h,w RGB)
+        from  caffe image (c,h,w BGR) to cv image (h,w,c BGR)
         TODO : process gray scale
         """
-        m = np.transpose(caffe_image, axes=(1,2,0))        
-        return cv2.cvtColor(m, cv2.COLOR_BGR2RGB) 
+        return np.transpose(caffe_image, axes=(1,2,0))        
 
         
 def make_tiled_image(cv_imgs, width=3, num_tile=9):
